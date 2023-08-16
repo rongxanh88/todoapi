@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"log"
 
 	_ "github.com/lib/pq"
 )
@@ -15,6 +16,10 @@ type Storage interface {
 
 type PostgresStore struct {
 	db *sql.DB
+}
+
+func (s *PostgresStore) Init() error {
+	return s.createTodoTable()
 }
 
 func NewPostgresStore() (*PostgresStore, error) {
@@ -45,4 +50,23 @@ func (s *PostgresStore) UpdateTodo(*Todo) error {
 
 func (s *PostgresStore) GetTodoById(int) (*Todo, error) {
 	return nil, nil
+}
+
+func (s *PostgresStore) createTodoTable() error {
+	query := `CREATE TABLE IF NOT EXISTS todos (
+			id SERIAL PRIMARY KEY,
+			title VARCHAR(255) NOT NULL,
+			description TEXT,
+			completed BOOLEAN,
+			created_at TIMESTAMPTZ DEFAULT NOW(),
+			updated_at TIMESTAMPTZ
+	);
+	`
+	_, err := s.db.Exec(query)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return err
 }
