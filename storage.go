@@ -30,3 +30,19 @@ func NewPostgresStore() (*PostgresStore, error) {
 
 	return &PostgresStore{db: db}, nil
 }
+
+func (s *PostgresStore) CreateTodo(*Todo) error {
+	return nil
+}
+
+func (s *PostgresStore) DeleteTodo(int) error {
+	return nil
+}
+
+func (s *PostgresStore) UpdateTodo(*Todo) error {
+	return nil
+}
+
+func (s *PostgresStore) GetTodoById(int) (*Todo, error) {
+	return nil, nil
+}

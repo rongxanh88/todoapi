@@ -11,6 +11,14 @@ import (
 
 type APIServer struct {
 	listenerAddress string
+	store           Storage
+}
+
+func NewAPIServer(listenerAddress string, store Storage) *APIServer {
+	return &APIServer{
+		listenerAddress: listenerAddress,
+		store:           store,
+	}
 }
 
 var todos []Todo
@@ -83,8 +91,4 @@ func WriteJSON(w http.ResponseWriter, status int, v any) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	return json.NewEncoder(w).Encode(v)
-}
-
-func NewAPIServer(listenerAddress string) *APIServer {
-	return &APIServer{listenerAddress: listenerAddress}
 }
