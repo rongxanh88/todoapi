@@ -13,30 +13,14 @@ type APIServer struct {
 	listenerAddress string
 }
 
-type Todo struct {
-	ID          int    `json:"id"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	Completed   bool   `json:"completed"`
-}
-
 var todos []Todo
-
-func WriteJSON(w http.ResponseWriter, status int, v any) error {
-	w.WriteHeader(status)
-	w.Header().Set("Content-Type", "application/json")
-	return json.NewEncoder(w).Encode(v)
-}
-
-func NewAPIServer(listenerAddress string) *APIServer {
-	return &APIServer{listenerAddress: listenerAddress}
-}
 
 func (s *APIServer) Run() {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/todos", s.handleTodos).Methods("GET")
 	router.HandleFunc("/todos", s.handleCreateTodo).Methods("POST")
+	router.HandleFunc("/todos/{id}", s.handleTodo).Methods("GET")
 	router.HandleFunc("/todos/{id}", s.handleUpdateTodo).Methods("PUT")
 	router.HandleFunc("/todos/{id}", s.handleDeleteTodo).Methods("DELETE")
 
@@ -46,6 +30,19 @@ func (s *APIServer) Run() {
 
 func (s *APIServer) handleTodos(w http.ResponseWriter, r *http.Request) {
 	WriteJSON(w, http.StatusOK, todos)
+}
+
+func (s *APIServer) handleTodo(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	id, _ := strconv.Atoi(params["id"])
+
+	for _, todo := range todos {
+		if todo.ID == id {
+			WriteJSON(w, http.StatusOK, todo)
+		}
+	}
+
+	WriteJSON(w, http.StatusNotFound, nil)
 }
 
 func (s *APIServer) handleCreateTodo(w http.ResponseWriter, r *http.Request) {
@@ -67,7 +64,7 @@ func (s *APIServer) handleUpdateTodo(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	WriteJSON(w, http.StatusNoContent, nil)
+	WriteJSON(w, http.StatusNotFound, nil)
 }
 
 func (s *APIServer) handleDeleteTodo(w http.ResponseWriter, r *http.Request) {
@@ -80,4 +77,14 @@ func (s *APIServer) handleDeleteTodo(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	WriteJSON(w, http.StatusNoContent, nil)
+}
+
+func WriteJSON(w http.ResponseWriter, status int, v any) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	return json.NewEncoder(w).Encode(v)
+}
+
+func NewAPIServer(listenerAddress string) *APIServer {
+	return &APIServer{listenerAddress: listenerAddress}
 }
