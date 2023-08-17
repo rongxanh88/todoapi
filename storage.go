@@ -90,8 +90,36 @@ func (s *PostgresStore) UpdateTodo(*Todo) error {
 	return nil
 }
 
-func (s *PostgresStore) GetTodoById(int) (*Todo, error) {
-	return nil, nil
+func (s *PostgresStore) GetTodoById(id int) (*Todo, error) {
+	query := "SELECT * FROM Todos WHERE ID = $1;"
+
+	rows, err := s.db.Query(query, id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	todo := new(Todo)
+	for rows.Next() {
+		err := rows.Scan(
+			&todo.ID,
+			&todo.Title,
+			&todo.Description,
+			&todo.Completed,
+			&todo.CreatedAt,
+			&todo.UpdatedAt,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if todo.ID != id {
+		return nil, nil
+	} else {
+		return todo, nil
+	}
 }
 
 func (s *PostgresStore) createTodoTable() error {

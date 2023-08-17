@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 )
@@ -44,16 +45,21 @@ func (s *APIServer) handleTodos(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *APIServer) handleTodo(w http.ResponseWriter, r *http.Request) {
-	// params := mux.Vars(r)
-	// id, _ := strconv.Atoi(params["id"])
+	params := mux.Vars(r)
+	id, _ := strconv.Atoi(params["id"])
 
-	// for _, todo := range todos {
-	// 	if todo.ID == id {
-	// 		WriteJSON(w, http.StatusOK, todo)
-	// 	}
-	// }
+	todo, err := s.store.GetTodoById(id)
 
-	// WriteJSON(w, http.StatusNotFound, nil)
+	if err != nil {
+		WriteJSON(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	if todo == nil {
+		WriteJSON(w, http.StatusNotFound, nil)
+	} else {
+		WriteJSON(w, http.StatusOK, todo)
+	}
 }
 
 func (s *APIServer) handleCreateTodo(w http.ResponseWriter, r *http.Request) {
