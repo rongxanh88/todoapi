@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 )
@@ -16,6 +17,12 @@ func main() {
 		log.Fatal(err)
 	}
 
-	server := NewAPIServer(":3000", store)
+	port := os.Getenv("PORT")
+	if len(port) == 0 {
+		port = "3000"
+	}
+
+	port = fmt.Sprintf(":%s", port)
+	server := NewAPIServer(port, store)
 	server.Run()
 }
