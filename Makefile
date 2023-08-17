@@ -3,6 +3,3 @@ build:
 
 run:  build
 		./bin/todoapi
-
-test:
-		go test -v ./...

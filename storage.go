@@ -25,9 +25,8 @@ func (s *PostgresStore) Init() error {
 	return s.createTodoTable()
 }
 
-func NewPostgresStore() (*PostgresStore, error) {
-	connStr := "user=postgres dbname=vorto_test sslmode=disable"
-	db, err := sql.Open("postgres", connStr)
+func NewPostgresStore(dbUrl string) (*PostgresStore, error) {
+	db, err := sql.Open("postgres", dbUrl)
 	if err != nil {
 		return nil, err
 	}

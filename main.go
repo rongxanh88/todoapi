@@ -2,10 +2,12 @@ package main
 
 import (
 	"log"
+	"os"
 )
 
 func main() {
-	store, err := NewPostgresStore()
+	dbUrl := os.Getenv("DATABASE_URL")
+	store, err := NewPostgresStore(dbUrl)
 	if err != nil {
 		log.Fatal(err)
 	}
