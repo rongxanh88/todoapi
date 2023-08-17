@@ -38,7 +38,7 @@ func (s *APIServer) handleTodos(w http.ResponseWriter, r *http.Request) {
 	todos, err := s.store.GetTodos()
 
 	if err != nil {
-		WriteJSON(w, http.StatusInternalServerError, err)
+		WriteJSON(w, http.StatusInternalServerError, ErrMsg{Error: err.Error()})
 	}
 
 	WriteJSON(w, http.StatusOK, todos)
@@ -51,15 +51,11 @@ func (s *APIServer) handleTodo(w http.ResponseWriter, r *http.Request) {
 	todo, err := s.store.GetTodoById(id)
 
 	if err != nil {
-		WriteJSON(w, http.StatusInternalServerError, err)
+		WriteJSON(w, http.StatusNotFound, ErrMsg{Error: err.Error()})
 		return
 	}
 
-	if todo == nil {
-		WriteJSON(w, http.StatusNotFound, nil)
-	} else {
-		WriteJSON(w, http.StatusOK, todo)
-	}
+	WriteJSON(w, http.StatusOK, todo)
 }
 
 func (s *APIServer) handleCreateTodo(w http.ResponseWriter, r *http.Request) {
@@ -80,18 +76,20 @@ func (s *APIServer) handleCreateTodo(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *APIServer) handleUpdateTodo(w http.ResponseWriter, r *http.Request) {
-	// params := mux.Vars(r)
-	// id, _ := strconv.Atoi(params["id"])
-	// var updatedTodo Todo
-	// _ = json.NewDecoder(r.Body).Decode(&updatedTodo)
-	// for index, todo := range todos {
-	// 	if todo.ID == id {
-	// 		todos[index] = updatedTodo
-	// 		WriteJSON(w, http.StatusOK, updatedTodo)
-	// 		return
-	// 	}
-	// }
-	// WriteJSON(w, http.StatusNotFound, nil)
+	params := mux.Vars(r)
+	id, _ := strconv.Atoi(params["id"])
+	updatedTodo := Todo{ID: id}
+	if err := json.NewDecoder(r.Body).Decode(&updatedTodo); err != nil {
+		WriteJSON(w, http.StatusBadRequest, err)
+		return
+	}
+	todo, err := s.store.UpdateTodo(&updatedTodo)
+	if err != nil {
+		WriteJSON(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, todo)
 }
 
 func (s *APIServer) handleDeleteTodo(w http.ResponseWriter, r *http.Request) {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"time"
 
@@ -11,7 +12,7 @@ import (
 type Storage interface {
 	CreateTodo(*Todo) error
 	DeleteTodo(int) error
-	UpdateTodo(*Todo) error
+	UpdateTodo(*Todo) (*Todo, error)
 	GetTodoById(int) (*Todo, error)
 	GetTodos() ([]*Todo, error)
 }
@@ -50,16 +51,7 @@ func (s *PostgresStore) GetTodos() ([]*Todo, error) {
 	todos := []*Todo{}
 
 	for rows.Next() {
-		todo := new(Todo)
-
-		err := rows.Scan(
-			&todo.ID,
-			&todo.Title,
-			&todo.Description,
-			&todo.Completed,
-			&todo.CreatedAt,
-			&todo.UpdatedAt,
-		)
+		todo, err := scanIntoTodo(rows)
 
 		if err != nil {
 			return nil, err
@@ -92,8 +84,30 @@ func (s *PostgresStore) DeleteTodo(id int) error {
 	return nil
 }
 
-func (s *PostgresStore) UpdateTodo(*Todo) error {
-	return nil
+func (s *PostgresStore) UpdateTodo(todo *Todo) (*Todo, error) {
+	query := `UPDATE Todos
+		SET title = $1, description = $2, Completed = $3, updated_at = $4
+		WHERE ID = $5;
+	`
+	row, err := s.db.Query(query, todo.Title, todo.Description, todo.Completed, time.Now().UTC(), todo.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = row.Scan(
+		&todo.ID,
+		&todo.Title,
+		&todo.Description,
+		&todo.Completed,
+		&todo.CreatedAt,
+		&todo.UpdatedAt,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return todo, nil
 }
 
 func (s *PostgresStore) GetTodoById(id int) (*Todo, error) {
@@ -102,30 +116,32 @@ func (s *PostgresStore) GetTodoById(id int) (*Todo, error) {
 	rows, err := s.db.Query(query, id)
 
 	if err != nil {
+		return nil, fmt.Errorf("Todo with id: %d not found", id)
+	}
+
+	for rows.Next() {
+		return scanIntoTodo(rows)
+	}
+
+	return nil, fmt.Errorf("Todo with id: %d not found", id)
+}
+
+func scanIntoTodo(rows *sql.Rows) (*Todo, error) {
+	todo := new(Todo)
+	err := rows.Scan(
+		&todo.ID,
+		&todo.Title,
+		&todo.Description,
+		&todo.Completed,
+		&todo.CreatedAt,
+		&todo.UpdatedAt,
+	)
+
+	if err != nil {
 		return nil, err
 	}
 
-	todo := new(Todo)
-	for rows.Next() {
-		err := rows.Scan(
-			&todo.ID,
-			&todo.Title,
-			&todo.Description,
-			&todo.Completed,
-			&todo.CreatedAt,
-			&todo.UpdatedAt,
-		)
-
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if todo.ID != id {
-		return nil, nil
-	} else {
-		return todo, nil
-	}
+	return todo, nil
 }
 
 func (s *PostgresStore) createTodoTable() error {

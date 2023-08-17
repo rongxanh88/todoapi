@@ -17,6 +17,10 @@ type CreateTodoRequest struct {
 	Completed   bool   `json:"completed"`
 }
 
+type ErrMsg struct {
+	Error string `json:"error"`
+}
+
 func NewTodo(title string, description string, completed bool) *Todo {
 	return &Todo{
 		Title:       title,
