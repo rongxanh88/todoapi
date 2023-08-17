@@ -95,15 +95,13 @@ func (s *APIServer) handleUpdateTodo(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *APIServer) handleDeleteTodo(w http.ResponseWriter, r *http.Request) {
-	// params := mux.Vars(r)
-	// id, _ := strconv.Atoi(params["id"])
-	// for index, todo := range todos {
-	// 	if todo.ID == id {
-	// 		todos = append(todos[:index], todos[index+1:]...)
-	// 		break
-	// 	}
-	// }
-	// WriteJSON(w, http.StatusNoContent, nil)
+	params := mux.Vars(r)
+	id, _ := strconv.Atoi(params["id"])
+
+	if err := s.store.DeleteTodo(id); err != nil {
+		WriteJSON(w, http.StatusInternalServerError, nil)
+	}
+	WriteJSON(w, http.StatusNoContent, nil)
 }
 
 func WriteJSON(w http.ResponseWriter, status int, v any) error {

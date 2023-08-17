@@ -82,7 +82,13 @@ func (s *PostgresStore) CreateTodo(todo *Todo) error {
 	return nil
 }
 
-func (s *PostgresStore) DeleteTodo(int) error {
+func (s *PostgresStore) DeleteTodo(id int) error {
+	query := "DELETE FROM Todos WHERE ID = $1;"
+
+	if _, err := s.db.Query(query, id); err != nil {
+		return err
+	}
+
 	return nil
 }
 
