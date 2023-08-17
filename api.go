@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/gorilla/mux"
 )
@@ -21,8 +20,6 @@ func NewAPIServer(listenerAddress string, store Storage) *APIServer {
 	}
 }
 
-var todos []Todo
-
 func (s *APIServer) Run() {
 	router := mux.NewRouter()
 
@@ -37,20 +34,26 @@ func (s *APIServer) Run() {
 }
 
 func (s *APIServer) handleTodos(w http.ResponseWriter, r *http.Request) {
+	todos, err := s.store.GetTodos()
+
+	if err != nil {
+		WriteJSON(w, http.StatusInternalServerError, err)
+	}
+
 	WriteJSON(w, http.StatusOK, todos)
 }
 
 func (s *APIServer) handleTodo(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	id, _ := strconv.Atoi(params["id"])
+	// params := mux.Vars(r)
+	// id, _ := strconv.Atoi(params["id"])
 
-	for _, todo := range todos {
-		if todo.ID == id {
-			WriteJSON(w, http.StatusOK, todo)
-		}
-	}
+	// for _, todo := range todos {
+	// 	if todo.ID == id {
+	// 		WriteJSON(w, http.StatusOK, todo)
+	// 	}
+	// }
 
-	WriteJSON(w, http.StatusNotFound, nil)
+	// WriteJSON(w, http.StatusNotFound, nil)
 }
 
 func (s *APIServer) handleCreateTodo(w http.ResponseWriter, r *http.Request) {
@@ -71,30 +74,30 @@ func (s *APIServer) handleCreateTodo(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *APIServer) handleUpdateTodo(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	id, _ := strconv.Atoi(params["id"])
-	var updatedTodo Todo
-	_ = json.NewDecoder(r.Body).Decode(&updatedTodo)
-	for index, todo := range todos {
-		if todo.ID == id {
-			todos[index] = updatedTodo
-			WriteJSON(w, http.StatusOK, updatedTodo)
-			return
-		}
-	}
-	WriteJSON(w, http.StatusNotFound, nil)
+	// params := mux.Vars(r)
+	// id, _ := strconv.Atoi(params["id"])
+	// var updatedTodo Todo
+	// _ = json.NewDecoder(r.Body).Decode(&updatedTodo)
+	// for index, todo := range todos {
+	// 	if todo.ID == id {
+	// 		todos[index] = updatedTodo
+	// 		WriteJSON(w, http.StatusOK, updatedTodo)
+	// 		return
+	// 	}
+	// }
+	// WriteJSON(w, http.StatusNotFound, nil)
 }
 
 func (s *APIServer) handleDeleteTodo(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	id, _ := strconv.Atoi(params["id"])
-	for index, todo := range todos {
-		if todo.ID == id {
-			todos = append(todos[:index], todos[index+1:]...)
-			break
-		}
-	}
-	WriteJSON(w, http.StatusNoContent, nil)
+	// params := mux.Vars(r)
+	// id, _ := strconv.Atoi(params["id"])
+	// for index, todo := range todos {
+	// 	if todo.ID == id {
+	// 		todos = append(todos[:index], todos[index+1:]...)
+	// 		break
+	// 	}
+	// }
+	// WriteJSON(w, http.StatusNoContent, nil)
 }
 
 func WriteJSON(w http.ResponseWriter, status int, v any) error {

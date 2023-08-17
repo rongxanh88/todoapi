@@ -13,6 +13,7 @@ type Storage interface {
 	DeleteTodo(int) error
 	UpdateTodo(*Todo) error
 	GetTodoById(int) (*Todo, error)
+	GetTodos() ([]*Todo, error)
 }
 
 type PostgresStore struct {
@@ -35,6 +36,39 @@ func NewPostgresStore() (*PostgresStore, error) {
 	}
 
 	return &PostgresStore{db: db}, nil
+}
+
+func (s *PostgresStore) GetTodos() ([]*Todo, error) {
+	query := "SELECT * FROM todos;"
+
+	rows, err := s.db.Query(query)
+
+	if err != nil {
+		return nil, err
+	}
+
+	todos := []*Todo{}
+
+	for rows.Next() {
+		todo := new(Todo)
+
+		err := rows.Scan(
+			&todo.ID,
+			&todo.Title,
+			&todo.Description,
+			&todo.Completed,
+			&todo.CreatedAt,
+			&todo.UpdatedAt,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+
+		todos = append(todos, todo)
+	}
+
+	return todos, nil
 }
 
 func (s *PostgresStore) CreateTodo(todo *Todo) error {
