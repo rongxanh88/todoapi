@@ -14,4 +14,7 @@ RUN go build -o /todo-api
 # API port
 EXPOSE 3000
 
+# POSTGRES port (only necessary for running locally)
+EXPOSE 5432
+
 CMD [ "/todo-api" ]
