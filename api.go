@@ -45,8 +45,7 @@ func (s *APIServer) handleTodos(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *APIServer) handleTodo(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	id, err := strconv.Atoi(params["id"])
+	id, err := getID(r)
 	if err != nil {
 		WriteJSON(w, http.StatusNotFound, ErrMsg{Error: err.Error()})
 		return
@@ -79,8 +78,7 @@ func (s *APIServer) handleCreateTodo(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *APIServer) handleUpdateTodo(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	id, err := strconv.Atoi(params["id"])
+	id, err := getID(r)
 	if err != nil {
 		WriteJSON(w, http.StatusNotFound, ErrMsg{Error: err.Error()})
 		return
@@ -100,8 +98,7 @@ func (s *APIServer) handleUpdateTodo(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *APIServer) handleDeleteTodo(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	id, err := strconv.Atoi(params["id"])
+	id, err := getID(r)
 	if err != nil {
 		WriteJSON(w, http.StatusNotFound, ErrMsg{Error: err.Error()})
 		return
@@ -118,4 +115,13 @@ func WriteJSON(w http.ResponseWriter, status int, v any) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	return json.NewEncoder(w).Encode(v)
+}
+
+func getID(r *http.Request) (int, error) {
+	params := mux.Vars(r)
+	id, err := strconv.Atoi(params["id"])
+	if err != nil {
+		return 0, fmt.Errorf("Invalid ID")
+	}
+	return id, nil
 }
