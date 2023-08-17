@@ -46,7 +46,11 @@ func (s *APIServer) handleTodos(w http.ResponseWriter, r *http.Request) {
 
 func (s *APIServer) handleTodo(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	id, _ := strconv.Atoi(params["id"])
+	id, err := strconv.Atoi(params["id"])
+	if err != nil {
+		WriteJSON(w, http.StatusNotFound, ErrMsg{Error: err.Error()})
+		return
+	}
 
 	todo, err := s.store.GetTodoById(id)
 
@@ -61,43 +65,51 @@ func (s *APIServer) handleTodo(w http.ResponseWriter, r *http.Request) {
 func (s *APIServer) handleCreateTodo(w http.ResponseWriter, r *http.Request) {
 	req := new(CreateTodoRequest)
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		fmt.Printf("%+v\n", req)
-		WriteJSON(w, http.StatusBadRequest, err)
+		WriteJSON(w, http.StatusBadRequest, ErrMsg{Error: err.Error()})
 		return
 	}
 	todo := NewTodo(req.Title, req.Description, req.Completed)
 
-	if err := s.store.CreateTodo(todo); err != nil {
-		WriteJSON(w, http.StatusBadRequest, err)
+	resp, err := s.store.CreateTodo(todo)
+	if err != nil {
+		WriteJSON(w, http.StatusBadRequest, ErrMsg{Error: err.Error()})
 		return
 	}
-
-	WriteJSON(w, http.StatusCreated, todo)
+	WriteJSON(w, http.StatusCreated, resp)
 }
 
 func (s *APIServer) handleUpdateTodo(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	id, _ := strconv.Atoi(params["id"])
-	updatedTodo := Todo{ID: id}
-	if err := json.NewDecoder(r.Body).Decode(&updatedTodo); err != nil {
-		WriteJSON(w, http.StatusBadRequest, err)
+	id, err := strconv.Atoi(params["id"])
+	if err != nil {
+		WriteJSON(w, http.StatusNotFound, ErrMsg{Error: err.Error()})
 		return
 	}
-	todo, err := s.store.UpdateTodo(&updatedTodo)
+	todoTemp := Todo{ID: id}
+	if err := json.NewDecoder(r.Body).Decode(&todoTemp); err != nil {
+		WriteJSON(w, http.StatusBadRequest, ErrMsg{Error: err.Error()})
+		return
+	}
+	updatedTodo, err := s.store.UpdateTodo(&todoTemp)
 	if err != nil {
-		WriteJSON(w, http.StatusInternalServerError, err)
+		WriteJSON(w, http.StatusInternalServerError, ErrMsg{Error: err.Error()})
 		return
 	}
 
-	WriteJSON(w, http.StatusOK, todo)
+	WriteJSON(w, http.StatusOK, updatedTodo)
 }
 
 func (s *APIServer) handleDeleteTodo(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	id, _ := strconv.Atoi(params["id"])
+	id, err := strconv.Atoi(params["id"])
+	if err != nil {
+		WriteJSON(w, http.StatusNotFound, ErrMsg{Error: err.Error()})
+		return
+	}
 
 	if err := s.store.DeleteTodo(id); err != nil {
-		WriteJSON(w, http.StatusInternalServerError, nil)
+		WriteJSON(w, http.StatusInternalServerError, ErrMsg{Error: err.Error()})
+		return
 	}
 	WriteJSON(w, http.StatusNoContent, nil)
 }

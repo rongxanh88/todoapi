@@ -10,7 +10,7 @@ import (
 )
 
 type Storage interface {
-	CreateTodo(*Todo) error
+	CreateTodo(*Todo) (*Todo, error)
 	DeleteTodo(int) error
 	UpdateTodo(*Todo) (*Todo, error)
 	GetTodoById(int) (*Todo, error)
@@ -63,15 +63,19 @@ func (s *PostgresStore) GetTodos() ([]*Todo, error) {
 	return todos, nil
 }
 
-func (s *PostgresStore) CreateTodo(todo *Todo) error {
+func (s *PostgresStore) CreateTodo(todo *Todo) (*Todo, error) {
 	query := `INSERT INTO todos (title, description, completed, created_at, updated_at)
-	VALUES ($1, $2, $3, $4, $5);
+	VALUES ($1, $2, $3, $4, $5)
+	RETURNING id, title, description, completed, created_at, updated_at;
 	`
-	_, err := s.db.Query(query, todo.Title, todo.Description, todo.Completed, time.Now().UTC(), time.Now().UTC())
+	rows, err := s.db.Query(query, todo.Title, todo.Description, todo.Completed, time.Now().UTC(), time.Now().UTC())
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	if rows.Next() {
+		return scanIntoTodo(rows)
+	}
+	return nil, nil
 }
 
 func (s *PostgresStore) DeleteTodo(id int) error {
@@ -87,27 +91,19 @@ func (s *PostgresStore) DeleteTodo(id int) error {
 func (s *PostgresStore) UpdateTodo(todo *Todo) (*Todo, error) {
 	query := `UPDATE Todos
 		SET title = $1, description = $2, Completed = $3, updated_at = $4
-		WHERE ID = $5;
+		WHERE ID = $5
+		RETURNING id, title, description, completed, created_at, updated_at;
 	`
-	row, err := s.db.Query(query, todo.Title, todo.Description, todo.Completed, time.Now().UTC(), todo.ID)
+	rows, err := s.db.Query(query, todo.Title, todo.Description, todo.Completed, time.Now().UTC(), todo.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	err = row.Scan(
-		&todo.ID,
-		&todo.Title,
-		&todo.Description,
-		&todo.Completed,
-		&todo.CreatedAt,
-		&todo.UpdatedAt,
-	)
-
-	if err != nil {
-		return nil, err
+	if rows.Next() {
+		return scanIntoTodo(rows)
 	}
 
-	return todo, nil
+	return nil, nil
 }
 
 func (s *PostgresStore) GetTodoById(id int) (*Todo, error) {
