@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"log"
+	"time"
 
 	_ "github.com/lib/pq"
 )
@@ -36,7 +37,14 @@ func NewPostgresStore() (*PostgresStore, error) {
 	return &PostgresStore{db: db}, nil
 }
 
-func (s *PostgresStore) CreateTodo(*Todo) error {
+func (s *PostgresStore) CreateTodo(todo *Todo) error {
+	query := `INSERT INTO todos (title, description, completed, created_at, updated_at)
+	VALUES ($1, $2, $3, $4, $5);
+	`
+	_, err := s.db.Query(query, todo.Title, todo.Description, todo.Completed, time.Now().UTC(), time.Now().UTC())
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

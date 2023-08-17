@@ -32,7 +32,7 @@ func (s *APIServer) Run() {
 	router.HandleFunc("/todos/{id}", s.handleUpdateTodo).Methods("PUT")
 	router.HandleFunc("/todos/{id}", s.handleDeleteTodo).Methods("DELETE")
 
-	fmt.Println("Server started at %d", s.listenerAddress)
+	fmt.Println("Server started at port", s.listenerAddress)
 	http.ListenAndServe(s.listenerAddress, router)
 }
 
@@ -54,10 +54,20 @@ func (s *APIServer) handleTodo(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *APIServer) handleCreateTodo(w http.ResponseWriter, r *http.Request) {
-	var todo Todo
-	_ = json.NewDecoder(r.Body).Decode(&todo)
-	todos = append(todos, todo)
-	WriteJSON(w, http.StatusCreated, todos)
+	req := new(CreateTodoRequest)
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		fmt.Printf("%+v\n", req)
+		WriteJSON(w, http.StatusBadRequest, err)
+		return
+	}
+	todo := NewTodo(req.Title, req.Description, req.Completed)
+
+	if err := s.store.CreateTodo(todo); err != nil {
+		WriteJSON(w, http.StatusBadRequest, err)
+		return
+	}
+
+	WriteJSON(w, http.StatusCreated, todo)
 }
 
 func (s *APIServer) handleUpdateTodo(w http.ResponseWriter, r *http.Request) {
